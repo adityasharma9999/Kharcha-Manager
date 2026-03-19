@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>SpendWise — Smart Expense Tracker</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  AUTH — LOGIN                                        ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="auth-screen" id="screen-login">
+  <div class="auth-box">
+    <div class="auth-brand">
+      <div class="auth-brand-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M3 6h18M3 12h18M3 18h10" stroke="#00e5a0" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="19" cy="18" r="3" stroke="#00e5a0" stroke-width="1.8"/>
+          <path d="M19 16.5v1.5l1 1" stroke="#00e5a0" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="auth-brand-name">Spend<span>Wise</span></div>
+    </div>
+    <div class="auth-card">
+      <div class="auth-title">Welcome back 👋</div>
+      <div class="auth-sub">Sign in to track your finances</div>
+      <div class="auth-error" id="login-error">Invalid username or password.</div>
+      <div class="fg">
+        <label>Username</label>
+        <input class="inp" id="login-user" type="text" placeholder="your_username"
+          autocomplete="username" autocapitalize="none" spellcheck="false">
+      </div>
+      <div class="fg">
+        <label>Password</label>
+        <input class="inp" id="login-pass" type="password" placeholder="Min 6 characters"
+          autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary fw" id="btn-login" onclick="doLogin()" style="margin-top:6px;">
+        Sign In
+      </button>
+      <div class="auth-switch">Don't have an account? <a onclick="showScreen('signup')">Create one</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  AUTH — SIGNUP                                       ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="auth-screen hidden" id="screen-signup">
+  <div class="auth-box">
+    <div class="auth-brand">
+      <div class="auth-brand-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M3 6h18M3 12h18M3 18h10" stroke="#00e5a0" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="19" cy="18" r="3" stroke="#00e5a0" stroke-width="1.8"/>
+          <path d="M19 16.5v1.5l1 1" stroke="#00e5a0" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="auth-brand-name">Spend<span>Wise</span></div>
+    </div>
+    <div class="auth-card">
+      <div class="auth-title">Create account ✨</div>
+      <div class="auth-sub">Start your financial journey today</div>
+      <div class="auth-error" id="signup-error">Something went wrong.</div>
+      <div class="fg">
+        <label>Full Name</label>
+        <input class="inp" id="signup-name" type="text" placeholder="e.g. Aditya Sharma" autocomplete="off">
+      </div>
+      <div class="fg">
+        <label>Username</label>
+        <input class="inp" id="signup-user" type="text" placeholder="3–20 chars, e.g. aditya99"
+          maxlength="20" autocomplete="off" autocapitalize="none" spellcheck="false"
+          oninput="validateUsername(this)">
+        <div class="uname-badge" id="uname-badge"></div>
+        <div style="font-size:11px;color:var(--tx3);margin-top:4px;">
+          Letters, numbers, underscore · 3–20 characters
+        </div>
+      </div>
+      <div class="gr2">
+        <div class="fg">
+          <label>Password</label>
+          <input class="inp" id="signup-pass" type="password" placeholder="Min 6 chars" autocomplete="new-password">
+        </div>
+        <div class="fg">
+          <label>Confirm</label>
+          <input class="inp" id="signup-pass2" type="password" placeholder="Repeat" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="fg">
+        <label>Currency</label>
+        <select class="inp" id="signup-cur">
+          <option value="₹">₹ Indian Rupee</option>
+          <option value="$">$ US Dollar</option>
+          <option value="€">€ Euro</option>
+          <option value="£">£ British Pound</option>
+        </select>
+      </div>
+      <button class="btn btn-primary fw" id="btn-signup" onclick="doSignup()" style="margin-top:6px;">
+        Create Account
+      </button>
+      <div class="auth-switch">Already have an account? <a onclick="showScreen('login')">Sign In</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  PAGE — DASHBOARD                                    ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="page" id="page-dashboard">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M3 6h18M3 12h18M3 18h10" stroke="#00e5a0" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="19" cy="18" r="3" stroke="#00e5a0" stroke-width="1.8"/>
+          <path d="M19 16.5v1.5l1 1" stroke="#00e5a0" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="topbar-name">Spend<span>Wise</span></div>
+    </div>
+    <div class="topbar-right">
+      <div class="avatar-btn" id="dash-avatar" onclick="gotoPage('settings')">S</div>
+    </div>
+  </div>
+  <div class="page-body">
+    <div style="margin-bottom:16px;padding-top:4px;">
+      <div style="font-family:'Sora',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.5px;">Dashboard</div>
+      <div style="font-size:14px;color:var(--tx2);margin-top:4px;">
+        Welcome back, <span id="dash-name" style="color:var(--gr);font-weight:700;">User</span> 👋
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <div class="qa-btn green" onclick="openSheet('tx');setTxMode('income')">
+        <div class="qa-icon">💰</div>Income
+      </div>
+      <div class="qa-btn red" onclick="openSheet('tx');setTxMode('expense')">
+        <div class="qa-icon">💸</div>Expense
+      </div>
+      <div class="qa-btn blue" onclick="openSheet('tx');setTxMode('recurring')">
+        <div class="qa-icon">🔄</div>Recurring
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-grid">
+      <div class="stat-card blue">
+        <div class="stat-icon">🐷</div>
+        <div class="stat-label">Balance</div>
+        <div class="stat-value blue" id="d-balance">₹0</div>
+        <div class="stat-sub">All time</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">📈</div>
+        <div class="stat-label">Income</div>
+        <div class="stat-value green" id="d-income">₹0</div>
+        <div class="stat-sub">This month</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon">📉</div>
+        <div class="stat-label">Expenses</div>
+        <div class="stat-value red" id="d-expense">₹0</div>
+        <div class="stat-sub">This month</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-icon">💵</div>
+        <div class="stat-label">Net Saved</div>
+        <div class="stat-value amber" id="d-saved">₹0</div>
+        <div class="stat-sub">This month</div>
+      </div>
+    </div>
+
+    <!-- Trend chart -->
+    <div class="card">
+      <div class="card-title">6-Month Trend</div>
+      <div class="chart-wrap chart-160"><canvas id="chart-trend"></canvas></div>
+    </div>
+
+    <!-- Donut breakdown -->
+    <div class="card">
+      <div class="card-title">Expense Breakdown</div>
+      <div style="display:flex;gap:16px;align-items:center;">
+        <canvas id="chart-donut" width="110" height="110" style="flex-shrink:0;"></canvas>
+        <div style="flex:1;" id="donut-legend"></div>
+      </div>
+    </div>
+
+    <!-- Recent transactions -->
+    <div class="card">
+      <div class="sec-hdr">
+        <div class="sec-hdr-title">Recent Transactions</div>
+        <div class="sec-hdr-link" onclick="gotoPage('history')">See All →</div>
+      </div>
+      <div id="dash-recent"></div>
+    </div>
+
+    <!-- Budget preview -->
+    <div class="card">
+      <div class="sec-hdr">
+        <div class="sec-hdr-title">Budget Status</div>
+        <div class="sec-hdr-link" onclick="gotoPage('budget')">Manage →</div>
+      </div>
+      <div id="dash-budget"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  PAGE — HISTORY                                      ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="page" id="page-history">
+  <div class="topbar">
+    <div class="topbar-title">Transactions</div>
+    <div class="topbar-right">
+      <div class="icon-btn" onclick="openSheet('tx')">＋</div>
+    </div>
+  </div>
+  <div class="page-body">
+    <div class="chip-row" id="hist-type-chips">
+      <div class="chip active" onclick="setHistFilter(this,'all')">All</div>
+      <div class="chip" onclick="setHistFilter(this,'income')">💰 Income</div>
+      <div class="chip" onclick="setHistFilter(this,'expense')">💸 Expense</div>
+      <div class="chip" onclick="setHistFilter(this,'recurring')">🔄 Recurring</div>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="inp search-inp" id="hist-search" placeholder="Search transactions…" oninput="renderHistory()">
+    </div>
+    <div class="chip-row" id="hist-month-chips"></div>
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:10px;" id="hist-info"></div>
+    <div id="hist-list"></div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  PAGE — BUDGET                                       ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="page" id="page-budget">
+  <div class="topbar">
+    <div class="topbar-title">Budget</div>
+    <div class="topbar-right">
+      <div class="icon-btn" onclick="openSheet('budget')">＋</div>
+    </div>
+  </div>
+  <div class="page-body">
+    <div class="fg">
+      <select class="inp" id="budget-month" onchange="renderBudget()"></select>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card green">
+        <div class="stat-icon">📈</div>
+        <div class="stat-label">Income</div>
+        <div class="stat-value green" id="bud-income">₹0</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-label">Budget Set</div>
+        <div class="stat-value blue" id="bud-total">₹0</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px;">
+      <div style="font-size:12px;color:var(--tx3);margin-bottom:6px;">Remaining Budget</div>
+      <div style="font-family:'Sora',sans-serif;font-size:32px;font-weight:800;" id="bud-remaining">₹0</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Budget Usage</div>
+      <div style="display:flex;justify-content:center;padding:6px 0;">
+        <canvas id="chart-gauge" width="180" height="180"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sec-hdr">
+        <div class="sec-hdr-title">By Category</div>
+        <div class="sec-hdr-link" onclick="openSheet('budget')">+ Set Limit</div>
+      </div>
+      <div id="budget-cats"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  PAGE — GOALS                                        ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="page" id="page-goals">
+  <div class="topbar">
+    <div class="topbar-title">Savings Goals</div>
+    <div class="topbar-right">
+      <div class="icon-btn" onclick="openSheet('goal')">＋</div>
+    </div>
+  </div>
+  <div class="page-body">
+    <div id="goals-list"></div>
+    <button class="btn btn-primary fw" onclick="openSheet('goal')" style="margin-top:4px;">
+      ＋ New Goal
+    </button>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  PAGE — REPORTS                                      ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="page" id="page-reports">
+  <div class="topbar"><div class="topbar-title">Reports</div></div>
+  <div class="page-body">
+    <div class="card">
+      <div class="card-title">Generate PDF Report</div>
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:10px;">Period</div>
+      <div id="report-period">
+        <div class="radio-item selected" onclick="pickPeriod(this)" data-months="1">
+          <div class="radio-circle"></div>
+          <div class="radio-label">Last Month</div>
+        </div>
+        <div class="radio-item" onclick="pickPeriod(this)" data-months="3">
+          <div class="radio-circle"></div>
+          <div class="radio-label">Last 3 Months</div>
+        </div>
+        <div class="radio-item" onclick="pickPeriod(this)" data-months="6">
+          <div class="radio-circle"></div>
+          <div class="radio-label">Last 6 Months</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="toggle-row">
+          <div class="toggle-info"><div class="toggle-title">Include Income</div></div>
+          <div class="toggle-switch on" id="rep-inc" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-info"><div class="toggle-title">Include Expenses</div></div>
+          <div class="toggle-switch on" id="rep-exp" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div>
+        </div>
+      </div>
+      <button class="btn btn-primary fw" style="margin-top:16px;" onclick="generatePDF()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 12.5h10M8 2.5v7M5 6.5l3 3 3-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Download PDF Report
+      </button>
+    </div>
+    <div class="card">
+      <div class="card-title">Monthly Overview</div>
+      <div class="chart-wrap chart-220"><canvas id="chart-report"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Category Spending</div>
+      <div class="chart-wrap chart-220"><canvas id="chart-cat-bar"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  PAGE — SETTINGS                                     ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="page" id="page-settings">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M3 6h18M3 12h18M3 18h10" stroke="#00e5a0" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="19" cy="18" r="3" stroke="#00e5a0" stroke-width="1.8"/>
+          <path d="M19 16.5v1.5l1 1" stroke="#00e5a0" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="topbar-title">Settings</div>
+    </div>
+  </div>
+  <div class="page-body">
+    <div class="settings-profile-card">
+      <div class="settings-avatar" id="set-avatar">S</div>
+      <div class="settings-name-wrap">
+        <div class="settings-name" id="set-display-name">SpendWise User</div>
+        <div class="settings-user" id="set-display-user">@username</div>
+      </div>
+    </div>
+
+    <div class="settings-section-label">Personal Info</div>
+    <div class="fg"><label>Display Name</label><input class="inp" id="set-name" placeholder="Your full name"></div>
+    <div class="fg">
+      <label>Currency</label>
+      <select class="inp" id="set-currency">
+        <option value="₹">₹ Indian Rupee</option>
+        <option value="$">$ US Dollar</option>
+        <option value="€">€ Euro</option>
+        <option value="£">£ British Pound</option>
+      </select>
+    </div>
+    <button class="btn btn-primary fw" onclick="saveSettings()" style="margin-bottom:20px;">Save Changes</button>
+
+    <div class="settings-section-label">Preferences</div>
+    <div class="toggle-row">
+      <div class="toggle-info">
+        <div class="toggle-title">🔔 Budget Alerts</div>
+        <div class="toggle-sub">Warn when 80% budget used</div>
+      </div>
+      <div class="toggle-switch on" id="toggle-alerts" onclick="this.classList.toggle('on')"><div class="toggle-knob"></div></div>
+    </div>
+
+    <div class="settings-section-label">Your Stats</div>
+    <div id="set-stats"></div>
+
+    <div class="settings-section-label">Account</div>
+    <button class="btn btn-danger fw" onclick="doLogout()" style="margin-bottom:8px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Sign Out
+    </button>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  BOTTOM NAV                                          ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<nav class="bottom-nav" id="bottom-nav">
+  <div class="nav-item active" onclick="gotoPage('dashboard',this)">
+    <div class="nav-icon">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <rect x="2.5" y="2.5" width="7" height="7" rx="2" fill="currentColor"/>
+        <rect x="12.5" y="2.5" width="7" height="7" rx="2" fill="currentColor" opacity=".5"/>
+        <rect x="2.5" y="12.5" width="7" height="7" rx="2" fill="currentColor" opacity=".5"/>
+        <rect x="12.5" y="12.5" width="7" height="7" rx="2" fill="currentColor" opacity=".3"/>
+      </svg>
+    </div>
+    <div class="nav-label">Home</div>
+  </div>
+  <div class="nav-item" onclick="gotoPage('history',this)">
+    <div class="nav-icon">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <rect x="3.5" y="3.5" width="15" height="15" rx="3" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M7 8h8M7 11h8M7 14h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="nav-label">History</div>
+  </div>
+  <div class="nav-item" onclick="gotoPage('budget',this)">
+    <div class="nav-icon">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <circle cx="11" cy="11" r="7.5" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M11 7v4.2l2.8 1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="nav-label">Budget</div>
+  </div>
+  <div class="nav-item" onclick="gotoPage('goals',this)">
+    <div class="nav-icon">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <circle cx="11" cy="11" r="7.5" stroke="currentColor" stroke-width="1.6"/>
+        <circle cx="11" cy="11" r="3.5" stroke="currentColor" stroke-width="1.4"/>
+        <circle cx="11" cy="11" r="1.3" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="nav-label">Goals</div>
+  </div>
+  <div class="nav-item" onclick="gotoPage('reports',this)">
+    <div class="nav-icon">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <rect x="3.5" y="3.5" width="15" height="15" rx="3" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M7 15V11M11 15V9M15 15V12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="nav-label">Reports</div>
+  </div>
+  <div class="nav-item" onclick="gotoPage('settings',this)">
+    <div class="nav-icon">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <circle cx="11" cy="11" r="2.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M11 3.5v2M11 16.5v2M3.5 11h2M16.5 11h2M5.55 5.55l1.41 1.41M15.04 15.04l1.41 1.41M5.55 16.45l1.41-1.41M15.04 6.96l1.41-1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="nav-label">Settings</div>
+  </div>
+</nav>
+
+<!-- ─── TOAST ──────────────────────────────────────────────── -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✓</span>
+  <span id="toast-msg">Done</span>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  SHEET — ADD TRANSACTION                             ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="sheet-overlay" id="sheet-tx" onclick="handleOverlayClick(event,'sheet-tx')">
+  <div class="sheet">
+    <div class="tx-sheet-header">
+      <div class="tx-sheet-title" id="tx-sheet-title">Add Expense</div>
+      <button class="tx-sheet-close" onclick="closeSheet('tx')">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="tx-sheet-body">
+      <!-- Type selector -->
+      <div class="type-seg" style="margin-top:20px;">
+        <div class="type-seg-btn income"     id="ts-income"    onclick="setTxMode('income')">💰 Income</div>
+        <div class="type-seg-btn expense sel" id="ts-expense"   onclick="setTxMode('expense')">💸 Expense</div>
+        <div class="type-seg-btn recurring"  id="ts-recurring" onclick="setTxMode('recurring')">🔄 Recurring</div>
+      </div>
+
+      <!-- Amount -->
+      <div class="amt-wrap" id="amt-wrap">
+        <span class="amt-label expense" id="amt-label">Amount</span>
+        <div class="amt-box expense" id="amt-box">
+          <span class="amt-sym" id="amt-currency-sym">₹</span>
+          <input class="amt-inp" type="number" id="tx-amount" placeholder="0" inputmode="decimal" step="0.01" min="0">
+        </div>
+      </div>
+
+      <!-- Category -->
+      <div class="cat-label">Category</div>
+      <div class="cat-trigger" id="cat-trigger" onclick="toggleCatPanel()">
+        <span class="cat-emoji" id="cat-emoji">🛒</span>
+        <span class="cat-name"  id="cat-name">Food</span>
+        <svg class="cat-chevron" id="cat-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="cat-panel" id="cat-panel"><!-- populated by JS --></div>
+      <input type="hidden" id="tx-category" value="Food">
+
+      <!-- Note -->
+      <input class="note-inp" type="text" id="tx-note" placeholder="Add a note (optional)…">
+
+      <!-- Date -->
+      <div class="date-row">
+        <div class="date-row-icon">📅</div>
+        <div class="date-row-body">
+          <div class="date-row-label">Date</div>
+          <div class="date-row-val" id="tx-date-display">Today</div>
+        </div>
+        <svg class="date-row-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <input class="date-real" type="date" id="tx-date" onchange="onDateChange(this.value)">
+      </div>
+
+      <!-- Recurring toggle -->
+      <div class="rec-toggle-row" id="rec-toggle-row">
+        <span class="rec-toggle-label">Make Recurring</span>
+        <div class="toggle-switch" id="tx-rec-toggle" onclick="toggleRecurring()"><div class="toggle-knob"></div></div>
+      </div>
+
+      <!-- Repeat period -->
+      <div id="repeat-wrap" style="display:none;">
+        <div class="repeat-seg">
+          <div class="repeat-opt active" data-val="daily"   onclick="selectRepeat(this)">Daily</div>
+          <div class="repeat-opt"        data-val="weekly"  onclick="selectRepeat(this)">Weekly</div>
+          <div class="repeat-opt"        data-val="monthly" onclick="selectRepeat(this)">Monthly</div>
+          <div class="repeat-opt"        data-val="yearly"  onclick="selectRepeat(this)">Yearly</div>
+        </div>
+      </div>
+
+      <!-- hidden state fields -->
+      <input type="hidden" id="tx-mode"   value="expense">
+      <input type="hidden" id="tx-period" value="monthly">
+      <input type="hidden" id="tx-is-rec" value="0">
+
+      <button class="tx-cta expense" id="tx-cta-btn" onclick="submitTransaction()">
+        <span id="tx-cta-label">Add Expense</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  SHEET — SET BUDGET                                  ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="sheet-overlay" id="sheet-budget" onclick="handleOverlayClick(event,'sheet-budget')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Set Budget Limit</div>
+    <div class="fg">
+      <label>Category</label>
+      <select class="inp" id="bud-category">
+        <option>Food</option><option>Transportation</option><option>Bills</option>
+        <option>Rent</option><option>Entertainment</option><option>Healthcare</option>
+        <option>Education</option><option>Shopping</option><option>Fuel</option>
+        <option>Groceries</option><option>EMI</option><option>Travel</option><option>Other</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>Monthly Limit (<span id="bud-cur-sym">₹</span>)</label>
+      <input class="inp" id="bud-limit" type="number" placeholder="e.g. 5000" inputmode="decimal">
+    </div>
+    <button class="btn btn-primary fw" onclick="submitBudget()">Save Budget</button>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  SHEET — ADD GOAL                                    ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="sheet-overlay" id="sheet-goal" onclick="handleOverlayClick(event,'sheet-goal')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">New Savings Goal</div>
+    <div class="fg">
+      <label>Goal Name</label>
+      <input class="inp" id="goal-name" placeholder="e.g. Emergency Fund">
+    </div>
+    <div class="gr2">
+      <div class="fg">
+        <label>Target Amount</label>
+        <input class="inp" id="goal-target" type="number" inputmode="decimal" placeholder="100000">
+      </div>
+      <div class="fg">
+        <label>Current Savings</label>
+        <input class="inp" id="goal-current" type="number" inputmode="decimal" placeholder="0">
+      </div>
+    </div>
+    <div class="gr2">
+      <div class="fg">
+        <label>Deadline</label>
+        <input class="inp" id="goal-deadline" type="date">
+      </div>
+      <div class="fg">
+        <label>Color</label>
+        <input class="inp" id="goal-color" type="color" value="#00e5a0" style="height:50px;padding:5px;cursor:pointer;">
+      </div>
+    </div>
+    <button class="btn btn-primary fw" onclick="submitGoal()">Create Goal</button>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<!-- ╔══════════════════════════════════════════════════════╗
+     ║  SHEET — UPDATE GOAL PROGRESS                        ║
+     ╚══════════════════════════════════════════════════════╝ -->
+<div class="sheet-overlay" id="sheet-goal-update" onclick="handleOverlayClick(event,'sheet-goal-update')">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Update Progress</div>
+    <input type="hidden" id="goal-update-id">
+    <div class="fg">
+      <label>Current Savings (<span id="goal-update-sym">₹</span>)</label>
+      <input class="inp" id="goal-update-amount" type="number" inputmode="decimal" placeholder="0">
+    </div>
+    <button class="btn btn-primary fw" onclick="submitGoalUpdate()">Update Goal</button>
+    <div style="height:8px;"></div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
